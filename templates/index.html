@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Data Lab</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="file"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        input[type="file"]:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .result-box {
+            background: #f5f5f5;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .result-box.show {
+            display: block;
+        }
+
+        .result-box h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .result-box pre {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 12px;
+            word-break: break-all;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .message.show {
+            display: block;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1> Secure Data Lab</h1>
+
+        </div>
+
+        <div class="content">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('crypto')">التشفير</button>
+                <button class="tab-btn" onclick="switchTab('hash')">البصمات</button>
+                <button class="tab-btn" onclick="switchTab('dss')">التوقيع</button>
+                <button class="tab-btn" onclick="switchTab('files')">ملفات</button>
+            </div>
+
+            <div id="message" class="message"></div>
+
+            <!-- ===== ENCRYPTION TAB ===== -->
+            <div id="crypto" class="tab-content active">
+                <div class="section">
+                    <div>
+                        <h2>خوارزميات التشفير</h2>
+
+                        <div class="form-group">
+                            <label>اختر الخوارزمية:</label>
+                            <select id="algo-select" onchange="updateAlgorithm()">
+                                <option value="sdes">SDES</option>
+                                <option value="des">DES</option>
+                                <option value="rsa">RSA</option>
+                                <option value="dh">Diffie-Hellman</option>
+                            </select>
+                        </div>
+
+                        <div class="button-group">
+                            <button class="btn-primary" onclick="generateKey()">توليد المفتاح</button>
+                            <button class="btn-secondary" onclick="copyKey()">نسخ المفتاح</button>
+                        </div>
+
+                        <div class="result-box" id="key-box">
+                            <h3>المفتاح المولد:</h3>
+                            <pre id="key-output"></pre>
+                        </div>
+
+                        <div id="key-info" style="margin-top: 20px;"></div>
+                    </div>
+
+                    <div>
+                        <h2>التشفير وفك التشفير</h2>
+
+                        <div class="form-group">
+                            <label>النص المراد تشفيره:</label>
+                            <textarea id="plaintext" placeholder="أدخل النص هنا..."></textarea>
+                        </div>
+
+                        <div class="button-group">
+                            <button class="btn-primary" onclick="encryptData()">تشفير</button>
+                            <button class="btn-secondary" onclick="decryptData()">فك تشفير</button>
+                        </div>
+
+                        <div class="result-box" id="crypto-result">
+                            <h3 id="crypto-result-title">النتيجة:</h3>
+                            <pre id="crypto-output"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== HASH TAB ===== -->
+            <div id="hash" class="tab-content">
+                <div class="section">
+                    <div>
+                        <h2>حساب البصمات</h2>
+
+                        <div class="form-group">
+                            <label>نوع البصمة:</label>
+                            <select id="hash-algo">
+                                <option value="md5">MD5</option>
+                                <option value="sha1">SHA-1</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>البيانات:</label>
+                            <textarea id="hash-input" placeholder="أدخل البيانات..."></textarea>
+                        </div>
+
+                        <button class="btn-primary" onclick="hashData()">حساب البصمة</button>
+
+                        <div class="result-box" id="hash-result">
+                            <h3>البصمة:</h3>
+                            <pre id="hash-output"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== DSS TAB ===== -->
+            <div id="dss" class="tab-content">
+                <div class="section">
+                    <div>
+                        <h2>التوقيع الرقمي</h2>
+
+                        <div class="button-group">
+                            <button class="btn-primary" onclick="generateDSSKeys()">توليد المفاتيح</button>
+                        </div>
+
+                        <div class="result-box" id="dss-keys">
+                            <h3>المفاتيح:</h3>
+                            <pre id="dss-keys-output"></pre>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="form-group">
+                            <label>الرسالة:</label>
+                            <textarea id="dss-message" placeholder="أدخل الرسالة..."></textarea>
+                        </div>
+
+                        <div class="button-group">
+                            <button class="btn-primary" onclick="signMessage()">توقيع</button>
+                            <button class="btn-secondary" onclick="verifyMessage()">التحقق</button>
+                        </div>
+
+                        <div class="form-group">
+                            <label>التوقيع:</label>
+                            <input type="text" id="dss-signature" placeholder="سيظهر هنا...">
+                        </div>
+
+                        <div class="result-box" id="dss-result">
+                            <h3>النتيجة:</h3>
+                            <pre id="dss-output"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== FILES TAB ===== -->
+            <div id="files" class="tab-content">
+                <div class="section">
+                    <div>
+                        <h2>تشفير الملفات</h2>
+
+                        <div class="form-group">
+                            <label>اختر خوارزمية:</label>
+                            <select id="file-algo">
+                                <option value="des">DES</option>
+                                <option value="sdes">SDES</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>الملف:</label>
+                            <input type="file" id="file-input" accept=".txt">
+                        </div>
+
+                        <button class="btn-primary" onclick="uploadEncrypt()">تحميل وتشفير</button>
+
+                        <div class="result-box" id="file-encrypt-result">
+                            <h3>النتيجة:</h3>
+                            <pre id="file-encrypt-output"></pre>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h2>فك تشفير الملفات</h2>
+
+                        <div class="form-group">
+                            <label>اسم الملف المشفر:</label>
+                            <input type="text" id="encrypted-filename" placeholder="مثال: encrypted_123456.txt">
+                        </div>
+
+                        <button class="btn-primary" onclick="downloadDecrypt()">تحميل وفك التشفير</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function showMessage(message, type = 'success') {
+            const msgEl = document.getElementById('message');
+            msgEl.textContent = message;
+            msgEl.className = `message show ${type}`;
+            setTimeout(() => msgEl.classList.remove('show'), 5000);
+        }
+
+        async function generateKey() {
+            const algo = document.getElementById('algo-select').value;
+
+            try {
+                const response = await fetch('/api/generate-key', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ algorithm: algo })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    const keyBox = document.getElementById('key-box');
+                    const keyOutput = document.getElementById('key-output');
+
+                    if (algo === 'rsa') {
+                        keyOutput.textContent = JSON.stringify(data.keys, null, 2);
+                    } else if (algo === 'dh') {
+                        keyOutput.textContent = `Private Key: ${data.private_key}\nPublic Key: ${data.public_key}\n\nParameters:\n${JSON.stringify(data.params, null, 2)}`;
+                    } else if (algo === 'des') {
+                        keyOutput.textContent = `Master Key: ${data.key}\n\nRound Keys (16):\n${data.round_keys.map((k, i) => `Round ${i+1}: ${k}`).join('\n')}`;
+                    } else {
+                        keyOutput.textContent = data.key;
+                    }
+
+                    keyBox.classList.add('show');
+                    showMessage('تم توليد المفتاح بنجاح', 'success');
+                } else {
+                    showMessage(data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('خطأ: ' + error.message, 'error');
+            }
+        }
+
+        function copyKey() {
+            const output = document.getElementById('key-output').textContent;
+            navigator.clipboard.writeText(output).then(() => {
+                showMessage('تم النسخ بنجاح', 'success');
+            });
+        }
+
+        async function encryptData() {
+            const algo = document.getElementById('algo-select').value;
+            const plaintext = document.getElementById('plaintext').value;
+
+            if (!plaintext) {
+                showMessage('أدخل نص للتشفير', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/encrypt', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ algorithm: algo, plaintext })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('crypto-result-title').textContent = 'النص المشفر:';
+                    document.getElementById('crypto-output').textContent = data.ciphertext;
+                    document.getElementById('crypto-result').classList.add('show');
+                    showMessage('تم التشفير بنجاح', 'success');
+                } else {
+                    showMessage(data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('خطأ: ' + error.message, 'error');
+            }
+        }
+
+        async function decryptData() {
+            const algo = document.getElementById('algo-select').value;
+            const ciphertext = document.getElementById('plaintext').value;
+
+            if (!ciphertext) {
+                showMessage('أدخل نص مشفر لفك التشفير', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/decrypt', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ algorithm: algo, ciphertext })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('crypto-result-title').textContent = 'النص مفكك التشفير:';
+                    document.getElementById('crypto-output').textContent = data.plaintext;
+                    document.getElementById('crypto-result').classList.add('show');
+                    showMessage('تم فك التشفير بنجاح', 'success');
+                } else {
+                    showMessage(data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('خطأ: ' + error.message, 'error');
+            }
+        }
+
+        async function hashData() {
+            const algo = document.getElementById('hash-algo').value;
+            const data = document.getElementById('hash-input').value;
+
+            if (!data) {
+                showMessage('أدخل بيانات', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/hash', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ algorithm: algo, data })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    document.getElementById('hash-output').textContent = result.hash;
+                    document.getElementById('hash-result').classList.add('show');
+                    showMessage('تم حساب البصمة بنجاح', 'success');
+                } else {
+                    showMessage(result.error, 'error');
+                }
+            } catch (error) {
+                showMessage('خطأ: ' + error.message, 'error');
+            }
+        }
+
+        async function generateDSSKeys() {
+            try {
+                const response = await fetch('/api/generate-key', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ algorithm: 'dss' })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('dss-keys-output').textContent = JSON.stringify(data.keys, null, 2);
+                    document.getElementById('dss-keys').classList.add('show');
+                    showMessage('تم توليد المفاتيح بنجاح', 'success');
+                }
+            } catch (error) {
+                showMessage('خطأ: ' + error.message, 'error');
+            }
+        }
+
+        async function signMessage() {
+            const message = document.getElementById('dss-message').value;
+
+            if (!message) {
+                showMessage('أدخل رسالة', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/sign', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('dss-signature').value = data.signature;
+                    showMessage('تم التوقيع بنجاح', 'success');
+                }
+            } catch (error) {
+                showMessage('خطأ: ' + error.message, 'error');
+            }
+        }
+
+        async function verifyMessage() {
+            const message = document.getElementById('dss-message').value;
+            const signature = document.getElementById('dss-signature').value;
+
+            if (!message || !signature) {
+                showMessage('أدخل الرسالة والتوقيع', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message, signature })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('dss-output').textContent = data.valid ? '✓ التوقيع صحيح' : '✗ التوقيع غير صحيح';
+                    document.getElementById('dss-result').classList.add('show');
+                    showMessage(data.valid ? 'التوقيع صحيح' : 'التوقيع غير صحيح', data.valid ? 'success' : 'error');
+                }
+            } catch (error) {
+                showMessage('خطأ: ' + error.message, 'error');
+            }
+        }
+
+        async function uploadEncrypt() {
+            const fileInput = document.getElementById('file-input');
+            const algo = document.getElementById('file-algo').value;
+
+            if (!fileInput.files.length) {
+                showMessage('اختر ملف', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('algorithm', algo);
+
+            try {
+                const response = await fetch('/api/upload-encrypt', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('file-encrypt-output').textContent = `الملف: ${data.filename}\n\n${data.message}`;
+                    document.getElementById('file-encrypt-result').classList.add('show');
+                    document.getElementById('encrypted-filename').value = data.filename;
+                    showMessage('تم تشفير الملف بنجاح', 'success');
+                } else {
+                    showMessage(data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('خطأ: ' + error.message, 'error');
+            }
+        }
+
+        function downloadDecrypt() {
+            const filename = document.getElementById('encrypted-filename').value;
+
+            if (!filename) {
+                showMessage('أدخل اسم الملف', 'error');
+                return;
+            }
+
+            window.location.href = `/api/download-decrypt/${filename}`;
+        }
+    </script>
+</body>
+</html>
