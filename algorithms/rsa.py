@@ -1,4 +1,3 @@
-
 import random
 
 
@@ -61,16 +60,47 @@ class RSA:
                 return d
         return None
 
-    def encrypt(self, message):
-        """Encrypt numeric message"""
+    def encrypt(self, plaintext):
+        """Encrypt text message"""
         if not self.e or not self.n:
             return "Keys not generated"
-        m = int(message) if isinstance(message, str) else message
-        return pow(m, self.e, self.n)
+
+        try:
+            # Convert text to numbers (encrypt each character)
+            ciphertext_list = []
+            for char in str(plaintext):
+                m = ord(char)
+                if m >= self.n:
+                    return f"Error: Character '{char}' (value {m}) is too large for modulus {self.n}"
+                c = pow(m, self.e, self.n)
+                ciphertext_list.append(str(c))
+
+            return ','.join(ciphertext_list)
+        except Exception as e:
+            return f"Encryption error: {str(e)}"
 
     def decrypt(self, ciphertext):
         """Decrypt message"""
         if not self.d or not self.n:
             return "Keys not generated"
-        c = int(ciphertext)
-        return pow(c, self.d, self.n)
+
+        try:
+            # Split the ciphertext by commas
+            if ',' not in str(ciphertext):
+                return "Error: Invalid ciphertext format. Expected comma-separated values."
+
+            ciphertext_list = str(ciphertext).split(',')
+            plaintext = ""
+
+            for cipher_val in ciphertext_list:
+                cipher_val = cipher_val.strip()
+                if not cipher_val.isdigit():
+                    return f"Error: Invalid cipher value '{cipher_val}'"
+
+                c = int(cipher_val)
+                m = pow(c, self.d, self.n)
+                plaintext += chr(m)
+
+            return plaintext
+        except Exception as e:
+            return f"Decryption error: {str(e)}"

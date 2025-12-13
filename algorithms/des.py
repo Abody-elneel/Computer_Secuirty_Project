@@ -251,6 +251,17 @@ class DES:
             return "No key generated"
 
         try:
+            # Clean the input - remove any whitespace
+            ciphertext_hex = ciphertext_hex.strip()
+
+            # Validate hex string
+            if not all(c in '0123456789abcdefABCDEF' for c in ciphertext_hex):
+                return "Error: Invalid hex characters in ciphertext"
+
+            # Check if length is even
+            if len(ciphertext_hex) % 2 != 0:
+                return "Error: Ciphertext length must be even"
+
             ciphertext_bytes = bytes.fromhex(ciphertext_hex)
             plaintext = ""
 
@@ -263,7 +274,9 @@ class DES:
             if not plaintext:
                 return ''
             padding_len = ord(plaintext[-1])
-            return plaintext[:-padding_len]
+            if padding_len > 0 and padding_len <= 8:
+                return plaintext[:-padding_len]
+            return plaintext
         except Exception as e:
             return f"Decryption error: {e}"
 

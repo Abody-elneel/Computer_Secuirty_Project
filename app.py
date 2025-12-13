@@ -82,6 +82,9 @@ def encrypt():
             ciphertext = algorithms['des'].encrypt(plaintext)
         elif algo == 'rsa':
             ciphertext = algorithms['rsa'].encrypt(plaintext)
+        elif algo == 'dh':
+            return jsonify({'success': False,
+                            'error': 'Diffie-Hellman is a key exchange algorithm, not for encryption/decryption'})
         else:
             return jsonify({'success': False, 'error': 'Algorithm does not support encryption'})
 
@@ -103,6 +106,9 @@ def decrypt():
             plaintext = algorithms['des'].decrypt(ciphertext)
         elif algo == 'rsa':
             plaintext = algorithms['rsa'].decrypt(ciphertext)
+        elif algo == 'dh':
+            return jsonify({'success': False,
+                            'error': 'Diffie-Hellman is a key exchange algorithm, not for encryption/decryption'})
         else:
             return jsonify({'success': False, 'error': 'Algorithm does not support decryption'})
 
@@ -149,7 +155,7 @@ def verify():
     signature = request.json.get('signature', '')
 
     try:
-        is_valid = algorithms['dss'].verify(message, int(signature))
+        is_valid = algorithms['dss'].verify(message, signature)
         return jsonify({'success': True, 'valid': is_valid})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
@@ -212,14 +218,28 @@ def upload_encrypt():
 
         elif algo == 'des':
             encrypted = algorithms['des'].encrypt(content)
+            # Store with metadata for DES
+            filename = secure_filename(f"encrypted_{datetime.now().timestamp()}.json")
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            des_data = {
+                'algorithm': 'des',
+                'ciphertext': encrypted,
+                'key': algorithms['des'].key
+            }
+            with open(filepath, 'w') as f:
+                json.dump(des_data, f)
         else:
             encrypted = algorithms['sdes'].encrypt(content)
-
-        filename = secure_filename(f"encrypted_{datetime.now().timestamp()}.txt")
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-
-        with open(filepath, 'w') as f:
-            f.write(encrypted)
+            # Store SDES with metadata including key
+            filename = secure_filename(f"encrypted_{datetime.now().timestamp()}.json")
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            sdes_data = {
+                'algorithm': 'sdes',
+                'ciphertext': encrypted,
+                'key': algorithms['sdes'].key
+            }
+            with open(filepath, 'w') as f:
+                json.dump(sdes_data, f)
 
         return jsonify({'success': True, 'filename': filename, 'message': 'File encrypted successfully'})
     except Exception as e:
@@ -253,11 +273,30 @@ def download_decrypt(filename):
             encrypted_file = hybrid_data['encrypted_file']
             decrypted = algorithms['des'].decrypt(encrypted_file)
         else:
-            # Standard decryption
-            with open(filepath, 'r') as f:
-                encrypted_content = f.read()
+            # Check if it's JSON format (DES or SDES with metadata)
+            try:
+                with open(filepath, 'r') as f:
+                    data = json.load(f)
 
-            decrypted = algorithms['des'].decrypt(encrypted_content)
+                algo = data.get('algorithm')
+                ciphertext = data.get('ciphertext')
+                key = data.get('key')
+
+                if algo == 'des':
+                    algorithms['des'].key = key
+                    algorithms['des']._compute_round_keys()
+                    decrypted = algorithms['des'].decrypt(ciphertext)
+                elif algo == 'sdes':
+                    algorithms['sdes'].key = key
+                    algorithms['sdes']._generate_subkeys()
+                    decrypted = algorithms['sdes'].decrypt(ciphertext)
+                else:
+                    decrypted = algorithms['des'].decrypt(ciphertext)
+            except:
+                # Fallback to plain text format (old format)
+                with open(filepath, 'r') as f:
+                    encrypted_content = f.read()
+                decrypted = algorithms['des'].decrypt(encrypted_content)
 
         return send_file(
             BytesIO(decrypted.encode()),
@@ -269,5 +308,87 @@ def download_decrypt(filename):
         return jsonify({'success': False, 'error': str(e)})
 
 
+@app.route('/api/hybrid-encrypt-message', methods=['POST'])
+def hybrid_encrypt_message():
+    """
+    Hybrid Encryption for Messages:
+    1. Generate random DES key
+    2. Encrypt message with DES using the generated key
+    3. Encrypt the DES key with RSA public key
+    """
+    plaintext = request.json.get('plaintext', '')
+
+    try:
+        # Step 1: Generate RSA keys if not already generated
+        if not algorithms['rsa'].e:
+            algorithms['rsa'].generate_keys()
+
+        # Step 2: Generate a random DES key
+        des_key = algorithms['des'].generate_key()
+
+        # Step 3: Encrypt the message with DES
+        algorithms['des'].key = des_key
+        algorithms['des']._compute_round_keys()
+        encrypted_message = algorithms['des'].encrypt(plaintext)
+
+        # Step 4: Convert DES key (64-bit hex string) to integer for RSA encryption
+        # Take the full hex key and convert to integer
+        des_key_int = int(des_key, 16)
+
+        # Step 5: Encrypt the DES key with RSA public key
+        encrypted_key = algorithms['rsa'].encrypt(str(des_key_int))
+
+        # Step 6: Package the encrypted data (include private key for decryption)
+        encrypted_data = {
+            'encrypted_message': encrypted_message,
+            'encrypted_key': str(encrypted_key),
+            'rsa_n': algorithms['rsa'].n,
+            'rsa_e': algorithms['rsa'].e,
+            'rsa_d': algorithms['rsa'].d  # Include private key for decryption
+        }
+
+        return jsonify({'success': True, 'encrypted_data': encrypted_data})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
+@app.route('/api/hybrid-decrypt-message', methods=['POST'])
+def hybrid_decrypt_message():
+    """
+    Hybrid Decryption for Messages:
+    1. Decrypt the DES key using RSA private key
+    2. Decrypt the message using the recovered DES key
+    """
+    encrypted_data = request.json.get('encrypted_data')
+
+    try:
+        # Step 1: Restore RSA public/private keys
+        algorithms['rsa'].n = encrypted_data['rsa_n']
+        algorithms['rsa'].e = encrypted_data['rsa_e']
+
+        # We need the private key d - check if it's provided
+        if 'rsa_d' in encrypted_data:
+            algorithms['rsa'].d = encrypted_data['rsa_d']
+        else:
+            return jsonify({'success': False, 'error': 'RSA private key (d) not found. Cannot decrypt.'})
+
+        # Step 2: Decrypt the DES key using RSA private key
+        encrypted_key = encrypted_data['encrypted_key']
+        decrypted_key_int = algorithms['rsa'].decrypt(encrypted_key)
+
+        # Step 3: Convert the decrypted key back to hex format (64-bit)
+        des_key = format(int(decrypted_key_int), '016x')
+
+        # Step 4: Restore the DES key and regenerate round keys
+        algorithms['des'].key = des_key
+        algorithms['des']._compute_round_keys()
+
+        # Step 5: Decrypt the message using DES
+        encrypted_message = encrypted_data['encrypted_message']
+        plaintext = algorithms['des'].decrypt(encrypted_message)
+
+        return jsonify({'success': True, 'plaintext': plaintext})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
 if __name__ == '__main__':
     app.run(debug=True)

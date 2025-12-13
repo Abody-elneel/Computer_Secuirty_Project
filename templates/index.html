@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -225,16 +225,16 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1> Secure Data Lab</h1>
-
+            <h1>🔐 Secure Data Lab</h1>
         </div>
 
         <div class="content">
             <div class="tabs">
-                <button class="tab-btn active" onclick="switchTab('crypto')">التشفير</button>
-                <button class="tab-btn" onclick="switchTab('hash')">البصمات</button>
-                <button class="tab-btn" onclick="switchTab('dss')">التوقيع</button>
-                <button class="tab-btn" onclick="switchTab('files')">ملفات</button>
+                <button class="tab-btn active" onclick="switchTab('crypto')">Encryption</button>
+                <button class="tab-btn" onclick="switchTab('hybrid')">Hybrid Encryption</button>
+                <button class="tab-btn" onclick="switchTab('hash')">Hash</button>
+                <button class="tab-btn" onclick="switchTab('dss')">Digital Signature</button>
+                <button class="tab-btn" onclick="switchTab('files')">Files</button>
             </div>
 
             <div id="message" class="message"></div>
@@ -243,10 +243,10 @@
             <div id="crypto" class="tab-content active">
                 <div class="section">
                     <div>
-                        <h2>خوارزميات التشفير</h2>
+                        <h2>Encryption Algorithms</h2>
 
                         <div class="form-group">
-                            <label>اختر الخوارزمية:</label>
+                            <label>Select Algorithm:</label>
                             <select id="algo-select" onchange="updateAlgorithm()">
                                 <option value="sdes">SDES</option>
                                 <option value="des">DES</option>
@@ -256,12 +256,12 @@
                         </div>
 
                         <div class="button-group">
-                            <button class="btn-primary" onclick="generateKey()">توليد المفتاح</button>
-                            <button class="btn-secondary" onclick="copyKey()">نسخ المفتاح</button>
+                            <button class="btn-primary" onclick="generateKey()">Generate Key</button>
+                            <button class="btn-secondary" onclick="copyKey()">Copy Key</button>
                         </div>
 
                         <div class="result-box" id="key-box">
-                            <h3>المفتاح المولد:</h3>
+                            <h3>Generated Key:</h3>
                             <pre id="key-output"></pre>
                         </div>
 
@@ -269,21 +269,75 @@
                     </div>
 
                     <div>
-                        <h2>التشفير وفك التشفير</h2>
+                        <h2>Encrypt & Decrypt</h2>
 
                         <div class="form-group">
-                            <label>النص المراد تشفيره:</label>
-                            <textarea id="plaintext" placeholder="أدخل النص هنا..."></textarea>
+                            <label>Enter Text (to encrypt or decrypt):</label>
+                            <textarea id="plaintext" placeholder="Enter text here..."></textarea>
                         </div>
 
                         <div class="button-group">
-                            <button class="btn-primary" onclick="encryptData()">تشفير</button>
-                            <button class="btn-secondary" onclick="decryptData()">فك تشفير</button>
+                            <button class="btn-primary" onclick="encryptData()">Encrypt</button>
+                            <button class="btn-secondary" onclick="decryptData()">Decrypt</button>
                         </div>
 
                         <div class="result-box" id="crypto-result">
-                            <h3 id="crypto-result-title">النتيجة:</h3>
+                            <h3 id="crypto-result-title">Result:</h3>
                             <pre id="crypto-output"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== HYBRID ENCRYPTION TAB ===== -->
+            <div id="hybrid" class="tab-content">
+                <div class="section">
+                    <div>
+                        <h2>Hybrid Encryption Setup</h2>
+                        <p style="margin-bottom: 20px; color: #666;">DES encrypts message + RSA encrypts DES key</p>
+
+                        <div class="button-group">
+                            <button class="btn-primary" onclick="generateHybridKeys()">Generate RSA Keys</button>
+                            <button class="btn-secondary" onclick="copyHybridKeys()">Copy Keys</button>
+                        </div>
+
+                        <div class="result-box" id="hybrid-keys-box">
+                            <h3>RSA Keys:</h3>
+                            <pre id="hybrid-keys-output"></pre>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h2>Encrypt Message</h2>
+
+                        <div class="form-group">
+                            <label>Enter Message:</label>
+                            <textarea id="hybrid-plaintext" placeholder="Enter message to encrypt..."></textarea>
+                        </div>
+
+                        <button class="btn-primary" onclick="hybridEncryptMessage()">Encrypt Message</button>
+
+                        <div class="result-box" id="hybrid-encrypt-result">
+                            <h3>Encrypted Result (JSON):</h3>
+                            <pre id="hybrid-encrypt-output"></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div>
+                        <h2>Decrypt Message</h2>
+
+                        <div class="form-group">
+                            <label>Encrypted Data (JSON):</label>
+                            <textarea id="hybrid-ciphertext" placeholder="Paste encrypted JSON here..."></textarea>
+                        </div>
+
+                        <button class="btn-primary" onclick="hybridDecryptMessage()">Decrypt Message</button>
+
+                        <div class="result-box" id="hybrid-decrypt-result">
+                            <h3>Decrypted Message:</h3>
+                            <pre id="hybrid-decrypt-output"></pre>
                         </div>
                     </div>
                 </div>
@@ -293,10 +347,10 @@
             <div id="hash" class="tab-content">
                 <div class="section">
                     <div>
-                        <h2>حساب البصمات</h2>
+                        <h2>Hash Calculation</h2>
 
                         <div class="form-group">
-                            <label>نوع البصمة:</label>
+                            <label>Hash Type:</label>
                             <select id="hash-algo">
                                 <option value="md5">MD5</option>
                                 <option value="sha1">SHA-1</option>
@@ -304,14 +358,14 @@
                         </div>
 
                         <div class="form-group">
-                            <label>البيانات:</label>
-                            <textarea id="hash-input" placeholder="أدخل البيانات..."></textarea>
+                            <label>Data:</label>
+                            <textarea id="hash-input" placeholder="Enter data..."></textarea>
                         </div>
 
-                        <button class="btn-primary" onclick="hashData()">حساب البصمة</button>
+                        <button class="btn-primary" onclick="hashData()">Calculate Hash</button>
 
                         <div class="result-box" id="hash-result">
-                            <h3>البصمة:</h3>
+                            <h3>Hash:</h3>
                             <pre id="hash-output"></pre>
                         </div>
                     </div>
@@ -322,36 +376,36 @@
             <div id="dss" class="tab-content">
                 <div class="section">
                     <div>
-                        <h2>التوقيع الرقمي</h2>
+                        <h2>Digital Signature</h2>
 
                         <div class="button-group">
-                            <button class="btn-primary" onclick="generateDSSKeys()">توليد المفاتيح</button>
+                            <button class="btn-primary" onclick="generateDSSKeys()">Generate Keys</button>
                         </div>
 
                         <div class="result-box" id="dss-keys">
-                            <h3>المفاتيح:</h3>
+                            <h3>Keys:</h3>
                             <pre id="dss-keys-output"></pre>
                         </div>
                     </div>
 
                     <div>
                         <div class="form-group">
-                            <label>الرسالة:</label>
-                            <textarea id="dss-message" placeholder="أدخل الرسالة..."></textarea>
+                            <label>Message:</label>
+                            <textarea id="dss-message" placeholder="Enter message..."></textarea>
                         </div>
 
                         <div class="button-group">
-                            <button class="btn-primary" onclick="signMessage()">توقيع</button>
-                            <button class="btn-secondary" onclick="verifyMessage()">التحقق</button>
+                            <button class="btn-primary" onclick="signMessage()">Sign</button>
+                            <button class="btn-secondary" onclick="verifyMessage()">Verify</button>
                         </div>
 
                         <div class="form-group">
-                            <label>التوقيع:</label>
-                            <input type="text" id="dss-signature" placeholder="سيظهر هنا...">
+                            <label>Signature:</label>
+                            <input type="text" id="dss-signature" placeholder="Will appear here...">
                         </div>
 
                         <div class="result-box" id="dss-result">
-                            <h3>النتيجة:</h3>
+                            <h3>Result:</h3>
                             <pre id="dss-output"></pre>
                         </div>
                     </div>
@@ -362,10 +416,10 @@
             <div id="files" class="tab-content">
                 <div class="section">
                     <div>
-                        <h2>تشفير الملفات</h2>
+                        <h2>Encrypt Files</h2>
 
                         <div class="form-group">
-                            <label>اختر خوارزمية:</label>
+                            <label>Select Algorithm:</label>
                             <select id="file-algo">
                                 <option value="des">DES</option>
                                 <option value="sdes">SDES</option>
@@ -373,27 +427,27 @@
                         </div>
 
                         <div class="form-group">
-                            <label>الملف:</label>
+                            <label>File:</label>
                             <input type="file" id="file-input" accept=".txt">
                         </div>
 
-                        <button class="btn-primary" onclick="uploadEncrypt()">تحميل وتشفير</button>
+                        <button class="btn-primary" onclick="uploadEncrypt()">Upload & Encrypt</button>
 
                         <div class="result-box" id="file-encrypt-result">
-                            <h3>النتيجة:</h3>
+                            <h3>Result:</h3>
                             <pre id="file-encrypt-output"></pre>
                         </div>
                     </div>
 
                     <div>
-                        <h2>فك تشفير الملفات</h2>
+                        <h2>Decrypt Files</h2>
 
                         <div class="form-group">
-                            <label>اسم الملف المشفر:</label>
-                            <input type="text" id="encrypted-filename" placeholder="مثال: encrypted_123456.txt">
+                            <label>Encrypted Filename:</label>
+                            <input type="text" id="encrypted-filename" placeholder="Example: encrypted_123456.txt">
                         </div>
 
-                        <button class="btn-primary" onclick="downloadDecrypt()">تحميل وفك التشفير</button>
+                        <button class="btn-primary" onclick="downloadDecrypt()">Download & Decrypt</button>
                     </div>
                 </div>
             </div>
@@ -445,19 +499,19 @@
                     }
 
                     keyBox.classList.add('show');
-                    showMessage('تم توليد المفتاح بنجاح', 'success');
+                    showMessage('Key generated successfully', 'success');
                 } else {
                     showMessage(data.error, 'error');
                 }
             } catch (error) {
-                showMessage('خطأ: ' + error.message, 'error');
+                showMessage('Error: ' + error.message, 'error');
             }
         }
 
         function copyKey() {
             const output = document.getElementById('key-output').textContent;
             navigator.clipboard.writeText(output).then(() => {
-                showMessage('تم النسخ بنجاح', 'success');
+                showMessage('Copied successfully', 'success');
             });
         }
 
@@ -466,7 +520,7 @@
             const plaintext = document.getElementById('plaintext').value;
 
             if (!plaintext) {
-                showMessage('أدخل نص للتشفير', 'error');
+                showMessage('Enter text to encrypt', 'error');
                 return;
             }
 
@@ -480,15 +534,15 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    document.getElementById('crypto-result-title').textContent = 'النص المشفر:';
+                    document.getElementById('crypto-result-title').textContent = 'Encrypted Text:';
                     document.getElementById('crypto-output').textContent = data.ciphertext;
                     document.getElementById('crypto-result').classList.add('show');
-                    showMessage('تم التشفير بنجاح', 'success');
+                    showMessage('Encrypted successfully', 'success');
                 } else {
                     showMessage(data.error, 'error');
                 }
             } catch (error) {
-                showMessage('خطأ: ' + error.message, 'error');
+                showMessage('Error: ' + error.message, 'error');
             }
         }
 
@@ -497,7 +551,7 @@
             const ciphertext = document.getElementById('plaintext').value;
 
             if (!ciphertext) {
-                showMessage('أدخل نص مشفر لفك التشفير', 'error');
+                showMessage('Enter encrypted text to decrypt', 'error');
                 return;
             }
 
@@ -511,15 +565,15 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    document.getElementById('crypto-result-title').textContent = 'النص مفكك التشفير:';
+                    document.getElementById('crypto-result-title').textContent = 'Decrypted Text:';
                     document.getElementById('crypto-output').textContent = data.plaintext;
                     document.getElementById('crypto-result').classList.add('show');
-                    showMessage('تم فك التشفير بنجاح', 'success');
+                    showMessage('Decrypted successfully', 'success');
                 } else {
                     showMessage(data.error, 'error');
                 }
             } catch (error) {
-                showMessage('خطأ: ' + error.message, 'error');
+                showMessage('Error: ' + error.message, 'error');
             }
         }
 
@@ -528,7 +582,7 @@
             const data = document.getElementById('hash-input').value;
 
             if (!data) {
-                showMessage('أدخل بيانات', 'error');
+                showMessage('Enter data', 'error');
                 return;
             }
 
@@ -544,12 +598,12 @@
                 if (result.success) {
                     document.getElementById('hash-output').textContent = result.hash;
                     document.getElementById('hash-result').classList.add('show');
-                    showMessage('تم حساب البصمة بنجاح', 'success');
+                    showMessage('Hash calculated successfully', 'success');
                 } else {
                     showMessage(result.error, 'error');
                 }
             } catch (error) {
-                showMessage('خطأ: ' + error.message, 'error');
+                showMessage('Error: ' + error.message, 'error');
             }
         }
 
@@ -566,10 +620,10 @@
                 if (data.success) {
                     document.getElementById('dss-keys-output').textContent = JSON.stringify(data.keys, null, 2);
                     document.getElementById('dss-keys').classList.add('show');
-                    showMessage('تم توليد المفاتيح بنجاح', 'success');
+                    showMessage('Keys generated successfully', 'success');
                 }
             } catch (error) {
-                showMessage('خطأ: ' + error.message, 'error');
+                showMessage('Error: ' + error.message, 'error');
             }
         }
 
@@ -577,7 +631,7 @@
             const message = document.getElementById('dss-message').value;
 
             if (!message) {
-                showMessage('أدخل رسالة', 'error');
+                showMessage('Enter a message', 'error');
                 return;
             }
 
@@ -592,10 +646,10 @@
 
                 if (data.success) {
                     document.getElementById('dss-signature').value = data.signature;
-                    showMessage('تم التوقيع بنجاح', 'success');
+                    showMessage('Message signed successfully', 'success');
                 }
             } catch (error) {
-                showMessage('خطأ: ' + error.message, 'error');
+                showMessage('Error: ' + error.message, 'error');
             }
         }
 
@@ -604,7 +658,7 @@
             const signature = document.getElementById('dss-signature').value;
 
             if (!message || !signature) {
-                showMessage('أدخل الرسالة والتوقيع', 'error');
+                showMessage('Enter message and signature', 'error');
                 return;
             }
 
@@ -618,12 +672,12 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    document.getElementById('dss-output').textContent = data.valid ? '✓ التوقيع صحيح' : '✗ التوقيع غير صحيح';
+                    document.getElementById('dss-output').textContent = data.valid ? '✓ Signature is valid' : '✗ Signature is invalid';
                     document.getElementById('dss-result').classList.add('show');
-                    showMessage(data.valid ? 'التوقيع صحيح' : 'التوقيع غير صحيح', data.valid ? 'success' : 'error');
+                    showMessage(data.valid ? 'Signature is valid' : 'Signature is invalid', data.valid ? 'success' : 'error');
                 }
             } catch (error) {
-                showMessage('خطأ: ' + error.message, 'error');
+                showMessage('Error: ' + error.message, 'error');
             }
         }
 
@@ -632,7 +686,7 @@
             const algo = document.getElementById('file-algo').value;
 
             if (!fileInput.files.length) {
-                showMessage('اختر ملف', 'error');
+                showMessage('Select a file', 'error');
                 return;
             }
 
@@ -649,15 +703,15 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    document.getElementById('file-encrypt-output').textContent = `الملف: ${data.filename}\n\n${data.message}`;
+                    document.getElementById('file-encrypt-output').textContent = `File: ${data.filename}\n\n${data.message}`;
                     document.getElementById('file-encrypt-result').classList.add('show');
                     document.getElementById('encrypted-filename').value = data.filename;
-                    showMessage('تم تشفير الملف بنجاح', 'success');
+                    showMessage('File encrypted successfully', 'success');
                 } else {
                     showMessage(data.error, 'error');
                 }
             } catch (error) {
-                showMessage('خطأ: ' + error.message, 'error');
+                showMessage('Error: ' + error.message, 'error');
             }
         }
 
@@ -665,11 +719,101 @@
             const filename = document.getElementById('encrypted-filename').value;
 
             if (!filename) {
-                showMessage('أدخل اسم الملف', 'error');
+                showMessage('Enter filename', 'error');
                 return;
             }
 
             window.location.href = `/api/download-decrypt/${filename}`;
+        }
+
+        // ===== HYBRID ENCRYPTION FUNCTIONS =====
+
+        async function generateHybridKeys() {
+            try {
+                const response = await fetch('/api/generate-key', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ algorithm: 'rsa' })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('hybrid-keys-output').textContent = JSON.stringify(data.keys, null, 2);
+                    document.getElementById('hybrid-keys-box').classList.add('show');
+                    showMessage('RSA keys generated successfully', 'success');
+                } else {
+                    showMessage(data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('Error: ' + error.message, 'error');
+            }
+        }
+
+        function copyHybridKeys() {
+            const output = document.getElementById('hybrid-keys-output').textContent;
+            navigator.clipboard.writeText(output).then(() => {
+                showMessage('Keys copied successfully', 'success');
+            });
+        }
+
+        async function hybridEncryptMessage() {
+            const plaintext = document.getElementById('hybrid-plaintext').value;
+
+            if (!plaintext) {
+                showMessage('Enter message to encrypt', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/hybrid-encrypt-message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ plaintext })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('hybrid-encrypt-output').textContent = JSON.stringify(data.encrypted_data, null, 2);
+                    document.getElementById('hybrid-encrypt-result').classList.add('show');
+                    showMessage('Message encrypted successfully', 'success');
+                } else {
+                    showMessage(data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('Error: ' + error.message, 'error');
+            }
+        }
+
+        async function hybridDecryptMessage() {
+            const ciphertext = document.getElementById('hybrid-ciphertext').value;
+
+            if (!ciphertext) {
+                showMessage('Enter encrypted data', 'error');
+                return;
+            }
+
+            try {
+                const encrypted_data = JSON.parse(ciphertext);
+                const response = await fetch('/api/hybrid-decrypt-message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ encrypted_data })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('hybrid-decrypt-output').textContent = data.plaintext;
+                    document.getElementById('hybrid-decrypt-result').classList.add('show');
+                    showMessage('Message decrypted successfully', 'success');
+                } else {
+                    showMessage(data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('Error: ' + error.message, 'error');
+            }
         }
     </script>
 </body>
