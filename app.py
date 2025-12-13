@@ -5,7 +5,6 @@ import json
 from io import BytesIO
 from datetime import datetime
 
-# ==================== IMPORTS FROM ALGORITHMS ====================
 from algorithms.des import DES
 from algorithms.sdes import SDES
 from algorithms.rsa import RSA
@@ -13,7 +12,6 @@ from algorithms.diffie_hellman import DiffieHellman
 from algorithms.hash_algo import HashAlgorithm
 from algorithms.dss import DSS
 
-# ==================== FLASK APP ====================
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-here'
@@ -22,7 +20,7 @@ UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# Initialize algorithms
+
 algorithms = {
     'sdes': SDES(),
     'des': DES(),
@@ -40,7 +38,7 @@ def index():
 
 @app.route('/api/generate-key', methods=['POST'])
 def generate_key():
-    """Generate keys for algorithm"""
+
     algo = request.json.get('algorithm')
 
     if algo == 'sdes':
@@ -71,7 +69,7 @@ def generate_key():
 
 @app.route('/api/encrypt', methods=['POST'])
 def encrypt():
-    """Encrypt data"""
+
     algo = request.json.get('algorithm')
     plaintext = request.json.get('plaintext', '')
 
@@ -95,7 +93,7 @@ def encrypt():
 
 @app.route('/api/decrypt', methods=['POST'])
 def decrypt():
-    """Decrypt data"""
+
     algo = request.json.get('algorithm')
     ciphertext = request.json.get('ciphertext', '')
 
@@ -119,7 +117,7 @@ def decrypt():
 
 @app.route('/api/hash', methods=['POST'])
 def hash_data():
-    """Hash data"""
+
     algo = request.json.get('algorithm')
     data = request.json.get('data', '')
 
@@ -138,7 +136,7 @@ def hash_data():
 
 @app.route('/api/sign', methods=['POST'])
 def sign():
-    """Sign message"""
+
     message = request.json.get('message', '')
 
     try:
@@ -150,7 +148,7 @@ def sign():
 
 @app.route('/api/verify', methods=['POST'])
 def verify():
-    """Verify signature"""
+
     message = request.json.get('message', '')
     signature = request.json.get('signature', '')
 
@@ -163,7 +161,7 @@ def verify():
 
 @app.route('/api/upload-encrypt', methods=['POST'])
 def upload_encrypt():
-    """Upload and encrypt file"""
+
     if 'file' not in request.files:
         return jsonify({'success': False, 'error': 'No file provided'})
 
@@ -214,6 +212,35 @@ def upload_encrypt():
                 'message': 'File encrypted with Hybrid (DES+RSA)',
                 'des_key': des_key,
                 'encrypted_key': str(encrypted_key)
+            })
+
+        elif algo == 'rsa':
+            # RSA File Encryption
+            if not algorithms['rsa'].e:
+                algorithms['rsa'].generate_keys()
+
+            # Encrypt the entire content as a single operation
+            encrypted_content = algorithms['rsa'].encrypt(content)
+
+            timestamp = str(datetime.now().timestamp()).replace('.', '')
+            filename = secure_filename(f"rsa_{timestamp}.json")
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+            rsa_data = {
+                'algorithm': 'rsa',
+                'ciphertext': encrypted_content,
+                'rsa_n': algorithms['rsa'].n,
+                'rsa_e': algorithms['rsa'].e,
+                'rsa_d': algorithms['rsa'].d
+            }
+
+            with open(filepath, 'w') as f:
+                json.dump(rsa_data, f, indent=2)
+
+            return jsonify({
+                'success': True,
+                'filename': filename,
+                'message': 'File encrypted with RSA'
             })
 
         elif algo == 'des':
@@ -272,6 +299,19 @@ def download_decrypt(filename):
             # Step 3: Decrypt file with DES
             encrypted_file = hybrid_data['encrypted_file']
             decrypted = algorithms['des'].decrypt(encrypted_file)
+
+        elif filename.startswith('rsa_'):
+            # RSA decryption
+            with open(filepath, 'r') as f:
+                rsa_data = json.load(f)
+
+            algorithms['rsa'].n = rsa_data['rsa_n']
+            algorithms['rsa'].e = rsa_data['rsa_e']
+            algorithms['rsa'].d = rsa_data['rsa_d']
+
+            ciphertext = rsa_data['ciphertext']
+            decrypted = algorithms['rsa'].decrypt(ciphertext)
+
         else:
             # Check if it's JSON format (DES or SDES with metadata)
             try:
@@ -390,5 +430,7 @@ def hybrid_decrypt_message():
         return jsonify({'success': True, 'plaintext': plaintext})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
+
+
 if __name__ == '__main__':
     app.run(debug=True)

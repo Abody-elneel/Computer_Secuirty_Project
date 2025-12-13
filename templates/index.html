@@ -225,7 +225,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🔐 Secure Data Lab</h1>
+            <h1> Secure Data Lab</h1>
         </div>
 
         <div class="content">
@@ -423,6 +423,7 @@
                             <select id="file-algo">
                                 <option value="des">DES</option>
                                 <option value="sdes">SDES</option>
+                                <option value="rsa">RSA</option>
                             </select>
                         </div>
 
@@ -444,7 +445,7 @@
 
                         <div class="form-group">
                             <label>Encrypted Filename:</label>
-                            <input type="text" id="encrypted-filename" placeholder="Example: encrypted_123456.txt">
+                            <input type="text" id="encrypted-filename" placeholder="Example: encrypted_123456.json">
                         </div>
 
                         <button class="btn-primary" onclick="downloadDecrypt()">Download & Decrypt</button>

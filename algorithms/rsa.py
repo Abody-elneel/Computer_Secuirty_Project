@@ -85,22 +85,45 @@ class RSA:
             return "Keys not generated"
 
         try:
-            # Split the ciphertext by commas
-            if ',' not in str(ciphertext):
-                return "Error: Invalid ciphertext format. Expected comma-separated values."
+            ciphertext_str = str(ciphertext).strip()
 
-            ciphertext_list = str(ciphertext).split(',')
-            plaintext = ""
+            # Check if it's comma-separated (message decryption)
+            if ',' in ciphertext_str:
+                ciphertext_list = ciphertext_str.split(',')
+                plaintext = ""
 
-            for cipher_val in ciphertext_list:
-                cipher_val = cipher_val.strip()
-                if not cipher_val.isdigit():
-                    return f"Error: Invalid cipher value '{cipher_val}'"
+                for cipher_val in ciphertext_list:
+                    cipher_val = cipher_val.strip()
+                    if not cipher_val:
+                        continue
+                    if not cipher_val.isdigit():
+                        return f"Error: Invalid cipher value '{cipher_val}'"
 
-                c = int(cipher_val)
+                    c = int(cipher_val)
+                    m = pow(c, self.d, self.n)
+                    plaintext += chr(m)
+
+                return plaintext
+            else:
+                # Single value decryption
+                if not ciphertext_str.isdigit():
+                    return "Error: Invalid cipher value"
+
+                c = int(ciphertext_str)
                 m = pow(c, self.d, self.n)
-                plaintext += chr(m)
+                return chr(m)
 
-            return plaintext
         except Exception as e:
             return f"Decryption error: {str(e)}"
+
+    def decrypt_single_value(self, cipher_value):
+        """Decrypt a single encrypted value (for file decryption)"""
+        if not self.d or not self.n:
+            return None
+
+        try:
+            c = int(cipher_value)
+            m = pow(c, self.d, self.n)
+            return chr(m)
+        except:
+            return None
