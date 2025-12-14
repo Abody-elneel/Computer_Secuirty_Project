@@ -275,7 +275,7 @@ def upload_encrypt():
 
 @app.route('/api/download-decrypt/<filename>', methods=['GET'])
 def download_decrypt(filename):
-    """Download and decrypt file"""
+
     try:
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(filename))
 
@@ -351,7 +351,7 @@ def download_decrypt(filename):
 @app.route('/api/hybrid-encrypt-message', methods=['POST'])
 def hybrid_encrypt_message():
     """
-    Hybrid Encryption for Messages:
+
     1. Generate random DES key
     2. Encrypt message with DES using the generated key
     3. Encrypt the DES key with RSA public key
