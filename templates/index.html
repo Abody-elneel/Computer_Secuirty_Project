@@ -11,15 +11,40 @@
             box-sizing: border-box;
         }
 
+        /* Custom Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #5568d3 0%, #6a3d8f 100%);
+        }
+
+        /* Firefox Scrollbar */
+        * {
+            scrollbar-color: #667eea #f1f1f1;
+            scrollbar-width: thin;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
+            overflow-y: scroll;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1800px;
             margin: 0 auto;
             background: white;
             border-radius: 15px;
@@ -41,6 +66,26 @@
 
         .content {
             padding: 30px;
+            max-height: calc(100vh - 200px);
+            overflow-y: auto;
+        }
+
+        /* Scrollbar for content area */
+        .content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .content::-webkit-scrollbar-track {
+            background: #f5f5f5;
+        }
+
+        .content::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 4px;
+        }
+
+        .content::-webkit-scrollbar-thumb:hover {
+            background: #5568d3;
         }
 
         .section {
@@ -219,6 +264,12 @@
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .section {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -457,11 +508,8 @@
 
     <script>
         function switchTab(tabName) {
-            // Hide all tabs
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-
-            // Show selected tab
             document.getElementById(tabName).classList.add('active');
             event.target.classList.add('active');
         }
@@ -475,20 +523,16 @@
 
         async function generateKey() {
             const algo = document.getElementById('algo-select').value;
-
             try {
                 const response = await fetch('/api/generate-key', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ algorithm: algo })
                 });
-
                 const data = await response.json();
-
                 if (data.success) {
                     const keyBox = document.getElementById('key-box');
                     const keyOutput = document.getElementById('key-output');
-
                     if (algo === 'rsa') {
                         keyOutput.textContent = JSON.stringify(data.keys, null, 2);
                     } else if (algo === 'dh') {
@@ -498,7 +542,6 @@
                     } else {
                         keyOutput.textContent = data.key;
                     }
-
                     keyBox.classList.add('show');
                     showMessage('Key generated successfully', 'success');
                 } else {
@@ -519,21 +562,17 @@
         async function encryptData() {
             const algo = document.getElementById('algo-select').value;
             const plaintext = document.getElementById('plaintext').value;
-
             if (!plaintext) {
                 showMessage('Enter text to encrypt', 'error');
                 return;
             }
-
             try {
                 const response = await fetch('/api/encrypt', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ algorithm: algo, plaintext })
                 });
-
                 const data = await response.json();
-
                 if (data.success) {
                     document.getElementById('crypto-result-title').textContent = 'Encrypted Text:';
                     document.getElementById('crypto-output').textContent = data.ciphertext;
@@ -550,21 +589,17 @@
         async function decryptData() {
             const algo = document.getElementById('algo-select').value;
             const ciphertext = document.getElementById('plaintext').value;
-
             if (!ciphertext) {
                 showMessage('Enter encrypted text to decrypt', 'error');
                 return;
             }
-
             try {
                 const response = await fetch('/api/decrypt', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ algorithm: algo, ciphertext })
                 });
-
                 const data = await response.json();
-
                 if (data.success) {
                     document.getElementById('crypto-result-title').textContent = 'Decrypted Text:';
                     document.getElementById('crypto-output').textContent = data.plaintext;
@@ -581,21 +616,17 @@
         async function hashData() {
             const algo = document.getElementById('hash-algo').value;
             const data = document.getElementById('hash-input').value;
-
             if (!data) {
                 showMessage('Enter data', 'error');
                 return;
             }
-
             try {
                 const response = await fetch('/api/hash', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ algorithm: algo, data })
                 });
-
                 const result = await response.json();
-
                 if (result.success) {
                     document.getElementById('hash-output').textContent = result.hash;
                     document.getElementById('hash-result').classList.add('show');
@@ -615,9 +646,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ algorithm: 'dss' })
                 });
-
                 const data = await response.json();
-
                 if (data.success) {
                     document.getElementById('dss-keys-output').textContent = JSON.stringify(data.keys, null, 2);
                     document.getElementById('dss-keys').classList.add('show');
@@ -630,21 +659,17 @@
 
         async function signMessage() {
             const message = document.getElementById('dss-message').value;
-
             if (!message) {
                 showMessage('Enter a message', 'error');
                 return;
             }
-
             try {
                 const response = await fetch('/api/sign', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ message })
                 });
-
                 const data = await response.json();
-
                 if (data.success) {
                     document.getElementById('dss-signature').value = data.signature;
                     showMessage('Message signed successfully', 'success');
@@ -657,21 +682,17 @@
         async function verifyMessage() {
             const message = document.getElementById('dss-message').value;
             const signature = document.getElementById('dss-signature').value;
-
             if (!message || !signature) {
                 showMessage('Enter message and signature', 'error');
                 return;
             }
-
             try {
                 const response = await fetch('/api/verify', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ message, signature })
                 });
-
                 const data = await response.json();
-
                 if (data.success) {
                     document.getElementById('dss-output').textContent = data.valid ? '✓ Signature is valid' : '✗ Signature is invalid';
                     document.getElementById('dss-result').classList.add('show');
@@ -685,24 +706,19 @@
         async function uploadEncrypt() {
             const fileInput = document.getElementById('file-input');
             const algo = document.getElementById('file-algo').value;
-
             if (!fileInput.files.length) {
                 showMessage('Select a file', 'error');
                 return;
             }
-
             const formData = new FormData();
             formData.append('file', fileInput.files[0]);
             formData.append('algorithm', algo);
-
             try {
                 const response = await fetch('/api/upload-encrypt', {
                     method: 'POST',
                     body: formData
                 });
-
                 const data = await response.json();
-
                 if (data.success) {
                     document.getElementById('file-encrypt-output').textContent = `File: ${data.filename}\n\n${data.message}`;
                     document.getElementById('file-encrypt-result').classList.add('show');
@@ -718,16 +734,12 @@
 
         function downloadDecrypt() {
             const filename = document.getElementById('encrypted-filename').value;
-
             if (!filename) {
                 showMessage('Enter filename', 'error');
                 return;
             }
-
             window.location.href = `/api/download-decrypt/${filename}`;
         }
-
-        // ===== HYBRID ENCRYPTION FUNCTIONS =====
 
         async function generateHybridKeys() {
             try {
@@ -736,9 +748,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ algorithm: 'rsa' })
                 });
-
                 const data = await response.json();
-
                 if (data.success) {
                     document.getElementById('hybrid-keys-output').textContent = JSON.stringify(data.keys, null, 2);
                     document.getElementById('hybrid-keys-box').classList.add('show');
@@ -760,21 +770,17 @@
 
         async function hybridEncryptMessage() {
             const plaintext = document.getElementById('hybrid-plaintext').value;
-
             if (!plaintext) {
                 showMessage('Enter message to encrypt', 'error');
                 return;
             }
-
             try {
                 const response = await fetch('/api/hybrid-encrypt-message', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ plaintext })
                 });
-
                 const data = await response.json();
-
                 if (data.success) {
                     document.getElementById('hybrid-encrypt-output').textContent = JSON.stringify(data.encrypted_data, null, 2);
                     document.getElementById('hybrid-encrypt-result').classList.add('show');
@@ -789,12 +795,10 @@
 
         async function hybridDecryptMessage() {
             const ciphertext = document.getElementById('hybrid-ciphertext').value;
-
             if (!ciphertext) {
                 showMessage('Enter encrypted data', 'error');
                 return;
             }
-
             try {
                 const encrypted_data = JSON.parse(ciphertext);
                 const response = await fetch('/api/hybrid-decrypt-message', {
@@ -802,9 +806,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ encrypted_data })
                 });
-
                 const data = await response.json();
-
                 if (data.success) {
                     document.getElementById('hybrid-decrypt-output').textContent = data.plaintext;
                     document.getElementById('hybrid-decrypt-result').classList.add('show');
