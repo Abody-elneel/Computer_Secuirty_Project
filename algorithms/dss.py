@@ -1,40 +1,48 @@
-import random
-import hashlib
+import ecdsa as ecd
+import hashlib as hash
 
 
 class DSS:
-    """Digital Signature Scheme (Simplified but Functional)"""
+    """Digital Signature Scheme using ECDSA with SECP256k1 curve"""
 
     def __init__(self):
         self.private_key = None
         self.public_key = None
-        self.p = 61  # Small prime for demo
-        self.messages_signed = {}  # Store message-signature pairs for verification
+        self.messages_signed = {}
 
     def generate_keys(self):
-        """Generate DSS keys"""
-        self.private_key = random.randint(2, self.p - 2)
-        self.public_key = pow(2, self.private_key, self.p)
-        self.messages_signed = {}  # Reset signature storage
-        return {"public_key": self.public_key, "private_key": self.private_key}
+        """Generate ECDSA keys using SECP256k1 curve"""
+        # Generate private key
+        self.private_key = ecd.SigningKey.generate(curve=ecd.SECP256k1)
+
+        # Derive public key from private key
+        self.public_key = self.private_key.get_verifying_key()
+
+        # Reset signature storage
+        self.messages_signed = {}
+
+        return {
+            "public_key": self.public_key.to_string().hex(),
+            "private_key": self.private_key.to_string().hex()
+        }
 
     def sign(self, message):
         """Sign message with private key"""
         if not self.private_key:
             self.generate_keys()
 
-        # Create a deterministic hash of the message
-        msg_hash = int(hashlib.md5(message.encode()).hexdigest(), 16) % (self.p - 1)
-        if msg_hash == 0:
-            msg_hash = 1
+        # Encode message and create SHA-1 hash
+        message_encoded = message.encode('utf-8')
+        message_hash = hash.sha1(message_encoded).digest()
 
-        # Sign: signature = (msg_hash * private_key) mod p
-        signature = (msg_hash * self.private_key) % self.p
+        # Sign the message hash with private key
+        signature = self.private_key.sign(message_hash)
 
         # Store the message-signature pair for verification
         self.messages_signed[message] = signature
 
-        return signature
+        # Return signature as hex string
+        return signature.hex()
 
     def verify(self, message, signature):
         """Verify signature with public key"""
@@ -42,27 +50,21 @@ class DSS:
             return False
 
         try:
-            signature = int(signature)
-        except:
+            # Convert hex signature back to bytes
+            if isinstance(signature, str):
+                signature_bytes = bytes.fromhex(signature)
+            else:
+                signature_bytes = signature
+
+            # Encode message and create SHA-1 hash (same as signing process)
+            message_encoded = message.encode('utf-8')
+            message_hash = hash.sha1(message_encoded).digest()
+
+            # Verify the signature
+            self.public_key.verify(signature_bytes, message_hash)
+            return True
+
+        except ecd.BadSignatureError:
             return False
-
-        # Create same hash as signing process
-        msg_hash = int(hashlib.md5(message.encode()).hexdigest(), 16) % (self.p - 1)
-        if msg_hash == 0:
-            msg_hash = 1
-
-        # Verification: 
-        # signature * public_key ≡ msg_hash * (2^private_key)^public_key (mod p)
-        # This simplifies to checking if the signature matches
-
-        # Check if this signature was generated from this message
-        if message in self.messages_signed:
-            return self.messages_signed[message] == signature
-
-        # Alternative verification (mathematical check)
-        # signature = msg_hash * private_key (mod p)
-        # signature * public_key = msg_hash * private_key * 2^private_key (mod p)
-        left_side = (signature * self.public_key) % self.p
-        right_side = (msg_hash * pow(2, self.private_key, self.p)) % self.p
-
-        return left_side == right_side
+        except Exception:
+            return False
