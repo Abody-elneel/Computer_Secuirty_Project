@@ -12,14 +12,12 @@ from algorithms.diffie_hellman import DiffieHellman
 from algorithms.hash_algo import HashAlgorithm
 from algorithms.dss import DSS
 
-
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-here'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
 
 algorithms = {
     'sdes': SDES(),
@@ -38,7 +36,6 @@ def index():
 
 @app.route('/api/generate-key', methods=['POST'])
 def generate_key():
-
     algo = request.json.get('algorithm')
 
     if algo == 'sdes':
@@ -69,16 +66,24 @@ def generate_key():
 
 @app.route('/api/encrypt', methods=['POST'])
 def encrypt():
-
     algo = request.json.get('algorithm')
     plaintext = request.json.get('plaintext', '')
 
     try:
         if algo == 'sdes':
+            # Check if key is generated
+            if not algorithms['sdes'].key:
+                return jsonify({'success': False, 'error': 'Please generate a key first'})
             ciphertext = algorithms['sdes'].encrypt(plaintext)
         elif algo == 'des':
+            # Check if key is generated
+            if not algorithms['des'].key:
+                return jsonify({'success': False, 'error': 'Please generate a key first'})
             ciphertext = algorithms['des'].encrypt(plaintext)
         elif algo == 'rsa':
+            # Check if keys are generated
+            if not algorithms['rsa'].e or not algorithms['rsa'].n:
+                return jsonify({'success': False, 'error': 'Please generate RSA keys first'})
             ciphertext = algorithms['rsa'].encrypt(plaintext)
         elif algo == 'dh':
             return jsonify({'success': False,
@@ -93,16 +98,24 @@ def encrypt():
 
 @app.route('/api/decrypt', methods=['POST'])
 def decrypt():
-
     algo = request.json.get('algorithm')
     ciphertext = request.json.get('ciphertext', '')
 
     try:
         if algo == 'sdes':
+            # Check if key is generated
+            if not algorithms['sdes'].key:
+                return jsonify({'success': False, 'error': 'Please generate a key first'})
             plaintext = algorithms['sdes'].decrypt(ciphertext)
         elif algo == 'des':
+            # Check if key is generated
+            if not algorithms['des'].key:
+                return jsonify({'success': False, 'error': 'Please generate a key first'})
             plaintext = algorithms['des'].decrypt(ciphertext)
         elif algo == 'rsa':
+            # Check if keys are generated
+            if not algorithms['rsa'].d or not algorithms['rsa'].n:
+                return jsonify({'success': False, 'error': 'Please generate RSA keys first'})
             plaintext = algorithms['rsa'].decrypt(ciphertext)
         elif algo == 'dh':
             return jsonify({'success': False,
@@ -117,7 +130,6 @@ def decrypt():
 
 @app.route('/api/hash', methods=['POST'])
 def hash_data():
-
     algo = request.json.get('algorithm')
     data = request.json.get('data', '')
 
@@ -136,10 +148,13 @@ def hash_data():
 
 @app.route('/api/sign', methods=['POST'])
 def sign():
-
     message = request.json.get('message', '')
 
     try:
+        # Check if keys are generated
+        if not algorithms['dss'].private_key:
+            return jsonify({'success': False, 'error': 'Please generate DSS keys first'})
+
         signature = algorithms['dss'].sign(message)
         return jsonify({'success': True, 'signature': str(signature)})
     except Exception as e:
@@ -148,11 +163,14 @@ def sign():
 
 @app.route('/api/verify', methods=['POST'])
 def verify():
-
     message = request.json.get('message', '')
     signature = request.json.get('signature', '')
 
     try:
+        # Check if keys are generated
+        if not algorithms['dss'].public_key:
+            return jsonify({'success': False, 'error': 'Please generate DSS keys first'})
+
         is_valid = algorithms['dss'].verify(message, signature)
         return jsonify({'success': True, 'valid': is_valid})
     except Exception as e:
@@ -161,7 +179,6 @@ def verify():
 
 @app.route('/api/upload-encrypt', methods=['POST'])
 def upload_encrypt():
-
     if 'file' not in request.files:
         return jsonify({'success': False, 'error': 'No file provided'})
 
@@ -215,9 +232,9 @@ def upload_encrypt():
             })
 
         elif algo == 'rsa':
-            # RSA File Encryption
+            # Check if RSA keys are generated
             if not algorithms['rsa'].e:
-                algorithms['rsa'].generate_keys()
+                return jsonify({'success': False, 'error': 'Please generate RSA keys first'})
 
             # Encrypt the entire content as a single operation
             encrypted_content = algorithms['rsa'].encrypt(content)
@@ -244,6 +261,10 @@ def upload_encrypt():
             })
 
         elif algo == 'des':
+            # Check if DES key is generated
+            if not algorithms['des'].key:
+                return jsonify({'success': False, 'error': 'Please generate a DES key first'})
+
             encrypted = algorithms['des'].encrypt(content)
             # Store with metadata for DES
             filename = secure_filename(f"encrypted_{datetime.now().timestamp()}.json")
@@ -256,6 +277,10 @@ def upload_encrypt():
             with open(filepath, 'w') as f:
                 json.dump(des_data, f)
         else:
+            # Check if SDES key is generated
+            if not algorithms['sdes'].key:
+                return jsonify({'success': False, 'error': 'Please generate an SDES key first'})
+
             encrypted = algorithms['sdes'].encrypt(content)
             # Store SDES with metadata including key
             filename = secure_filename(f"encrypted_{datetime.now().timestamp()}.json")
@@ -275,7 +300,6 @@ def upload_encrypt():
 
 @app.route('/api/download-decrypt/<filename>', methods=['GET'])
 def download_decrypt(filename):
-
     try:
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(filename))
 
@@ -351,7 +375,7 @@ def download_decrypt(filename):
 @app.route('/api/hybrid-encrypt-message', methods=['POST'])
 def hybrid_encrypt_message():
     """
-
+    Hybrid Encryption for Messages:
     1. Generate random DES key
     2. Encrypt message with DES using the generated key
     3. Encrypt the DES key with RSA public key
